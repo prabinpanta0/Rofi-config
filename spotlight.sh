@@ -5,5 +5,4 @@ rofi -show combi -sep $'\t' -display-columns 1 \
      -disable-history \
      -theme $HOME/.config/rofi/config.rasi \
      -no-sort \
-     -show-icons true \
-     -icon-theme "Papirus-Dark" \
+     -show-icons false \

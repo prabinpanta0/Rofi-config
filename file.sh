@@ -56,19 +56,43 @@ EXCLUDES=(
 )
 
 # 3. Fast List Generation
-# We only process the first 500 results to keep it snappy
-"$FD_BIN" --max-results 500 --max-depth 4 "${EXCLUDES[@]}" "$QUERY" "$HOME" | while read -r path; do
-    name=$(basename "$path")
-    display_path=${path/#$HOME/~}
+# We only process the first 2000  results to keep it snappy
+# "$FD_BIN" --max-results 2000 --max-depth 4 "${EXCLUDES[@]}" "$QUERY" "$HOME" | while read -r path; do
+#     name=$(basename "$path")
+#     display_path=${path/#$HOME/~}
     
-    # Simple icon logic
-    icon="text-x-generic"
-    [[ -d "$path" ]] && icon="folder"
-    [[ "$path" =~ \.(png|jpg|jpeg|gif)$ ]] && icon="image-x-generic"
-    [[ "$path" =~ \.(mp4|mkv|avi)$ ]] && icon="video-x-generic"
-    [[ "$path" =~ \.(pdf)$ ]] && icon="document-pdf"
-    [[ "$path" =~ \.(zip|tar|gz)$ ]] && icon="package-x-generic"
+#     # Simple icon logic
+#     icon="text-x-generic"
+#     [[ -d "$path" ]] && icon="folder"
+#     [[ "$path" =~ \.(png|jpg|jpeg|gif)$ ]] && icon="image-x-generic"
+#     [[ "$path" =~ \.(mp4|mkv|avi)$ ]] && icon="video-x-generic"
+#     [[ "$path" =~ \.(pdf)$ ]] && icon="document-pdf"
+#     [[ "$path" =~ \.(zip|tar|gz)$ ]] && icon="package-x-generic"
 
-    # Print for Rofi: Display Text \0 Metadata
-    printf "%-30s  <%s>\0icon\x1f%s\x1finfo\x1f%s\n" "$name" "$display_path" "$icon" "$path"
-done
+#     # Print for Rofi: Display Text \0 Metadata
+#     printf "%-30s  <%s>\0icon\x1f%s\x1finfo\x1f%s\n" "$name" "$display_path" "$icon" "$path"
+# done
+
+# Optimized AWK with trailing slash handling
+"$FD_BIN" --max-results 2000 --max-depth 4 "${EXCLUDES[@]}" "$QUERY" "$HOME" | awk -v home="$HOME" '
+{
+    path = $0
+    # Remove trailing slash if it exists so split() gets the folder name
+    clean_path = path; sub(/\/$/, "", clean_path);
+    
+    display_path = path
+    sub(home, "~", display_path)
+    
+    n = split(clean_path, parts, "/")
+    name = parts[n]
+
+    icon = "text-x-generic"
+    # Improved folder detection
+    if (path ~ /\/$/ || system("test -d \"" path "\"") == 0) icon = "folder"
+    else if (path ~ /\.(png|jpg|jpeg|gif)$/) icon = "image-x-generic"
+    else if (path ~ /\.(mp4|mkv|avi)$/) icon = "video-x-generic"
+    else if (path ~ /\.(pdf)$/) icon = "document-pdf"
+    else if (path ~ /\.(zip|tar|gz)$/) icon = "package-x-generic"
+
+    printf "%-30s  <%s>\0icon\x1f%s\x1finfo\x1f%s\n", name, display_path, icon, path
+}'

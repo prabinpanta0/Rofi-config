@@ -1,0 +1,55 @@
+* {
+    bg-col:      #2e3440;
+    bg-alt:      #3b4252;
+    border-col:  #4c566a;
+    selected-col: #81a1c1;
+    text-col:    #d8dee9;
+    text-sel:    #2e3440;
+    text-muted:  #7f8c8d; /* Smooth muted color for file paths */
+
+    width: 600;
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+element {
+    padding: 8px 12px;
+    spacing: 12px;
+    background-color: transparent;
+    text-color: @text-col;
+    orientation: horizontal;
+    children: [element-icon, element-text];
+}
+
+element-icon {
+    size: 32px; /* Marginally scaled up to look balanced next to two lines of text */
+    cursor: pointer;
+    background-color: transparent;
+    vertical-align: 0.5;
+}
+
+element-text {
+    vertical-align: 0.5;
+    background-color: transparent;
+    text-color: inherit;
+    wrap: true; /* Allows the literal newline to drop down smoothly */
+}
+
+element selected {
+    background-color: @selected-col;
+    text-color: @text-sel;
+    border-radius: 6px;
+}
+
+/* Boilerplate structural blocks */
+window {
+    padding: 20px;
+    background-color: @bg-col;
+    border: 2px;
+    border-color: @border-col;
+    border-radius: 12px;
+}
+mainbox { background-color: transparent; children: [inputbar, listview]; }
+inputbar { background-color: transparent; padding: 0 0 12px 0; children: [prompt, entry]; }
+entry { background-color: @bg-alt; text-color: @text-col; padding: 8px; border-radius: 6px; }
+prompt { background-color: @selected-col; text-color: @text-sel; padding: 8px; border-radius: 6px; margin: 0 8px 0 0; }
+listview { background-color: transparent; columns: 1; lines: 8; fixed-height: true; }

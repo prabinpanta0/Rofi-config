@@ -1,0 +1,6 @@
+#!/bin/bash
+rofi -show combi \
+     -combi-modes "drun,files,window" \
+     -modes "combi,drun,files:$HOME/.config/rofi/files,window" \
+     -no-sort \
+     -show-icons true

@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# 1. Instant execution engine using your absolute custom bin path
+if [ -n "$ROFI_INFO" ] && [ -f "$ROFI_INFO" ]; then
+    nohup "$HOME/.config/rofi/xl-open" "$ROFI_INFO" >/dev/null 2>&1 &
+    exit 0
+fi
+
+FD_BIN=$(command -v fd || command -v fdfind)
+
+# 2. Handle search context parameters seamlessly
+RAW_QUERY="${1:-""}"
+if [ -z "$RAW_QUERY" ] || [ "$RAW_QUERY" = "." ]; then
+    PATTERN="."
+else
+    PATTERN="$RAW_QUERY"
+fi
+
+# 3. Stream matched files out to our AWK dictionary engine
+"$FD_BIN" --type f \
+          --hidden \
+          --no-ignore \
+          --exclude ".*" \
+          --max-results 1000 \
+          --max-depth 5 \
+          "$PATTERN" "$HOME" | awk -v home="$HOME" '
+BEGIN {
+    # Establish dictionary translation maps for lookups
+    icons["png"]="image-x-generic";  icons["jpg"]="image-x-generic";   icons["jpeg"]="image-x-generic"
+    icons["gif"]="image-x-generic";  icons["svg"]="image-x-generic";   icons["webp"]="image-x-generic"
+    icons["bmp"]="image-x-generic"
+
+    icons["mp4"]="video-x-generic";  icons["mkv"]="video-x-generic";   icons["mov"]="video-x-generic"
+    icons["avi"]="video-x-generic";  icons["webm"]="video-x-generic";  icons["flv"]="video-x-generic"
+    icons["mp3"]="audio-x-generic";  icons["wav"]="audio-x-generic";   icons["flac"]="audio-x-generic"
+    icons["ogg"]="audio-x-generic";  icons["m4a"]="audio-x-generic"
+
+    icons["pdf"]="application-pdf";  icons["md"]="x-office-document";  icons["txt"]="x-office-document"
+    icons["csv"]="x-office-document"; icons["docx"]="x-office-document"; icons["xlsx"]="x-office-document"
+    icons["pptx"]="x-office-document"; icons["odt"]="x-office-document"
+
+    icons["zip"]="package-x-generic"; icons["tar"]="package-x-generic"; icons["gz"]="package-x-generic"
+    icons["7z"]="package-x-generic";  icons["rar"]="package-x-generic";  icons["xz"]="package-x-generic"
+}
+{
+    path = $0
+
+    # Isolate filename and its base directory structure component
+    idx = match(path, /\/[^\/]+$/)
+    if (idx > 0) {
+        name = substr(path, idx + 1)
+        dir  = substr(path, 1, idx)
+    } else {
+        name = path
+        dir  = "./"
+    }
+
+    # Translate absolute home directory paths into clean terminal strings
+    sub(home, "~", dir)
+
+    # Extract extension keyword safely
+    ext = ""
+    n = split(name, parts, ".")
+    if (n > 1) {
+        ext = tolower(parts[n])
+    }
+
+    # Execute O(1) dictionary key validation check
+    if (ext in icons) {
+        icon = icons[ext]
+
+        # Simple, clean string combination separated by a pipe
+        display_string = sprintf("%s | %s", name, dir)
+
+        printf "%s\0icon\x1f%s\x1finfo\x1f%s\n", display_string, icon, path
+    }
+}'

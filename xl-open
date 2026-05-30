@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+target="$1"
+[ -z "$target" ] && { echo "Usage: xdg-open <file-or-url>"; exit 1; }
+
+# --- 1. Handle URLs ---
+if [[ "$target" =~ ^https?:// ]]; then
+    if command -v zen-browser >/dev/null; then exec zen-browser "$target"; fi
+    for browser in google-chrome firefox chromium brave; do
+        command -v "$browser" >/dev/null && exec "$browser" "$target"
+    done
+    exec gio open "$target"
+fi
+
+# --- 2. Handle Files ---
+if [ -e "$target" ]; then
+    mime_type=$(file --mime-type -b "$target")
+
+    case "$mime_type" in
+        image/*)
+            for img in loupe eog feh imv viewnior; do
+                command -v "$img" >/dev/null && exec "$img" "$target"
+            done
+            ;;
+
+        video/*|audio/*)
+            for media in mpv vlc totem; do
+                command -v "$media" >/dev/null && exec "$media" "$target"
+            done
+            ;;
+
+        application/pdf)
+            if command -v zen-browser >/dev/null; then exec zen-browser "$target"; fi
+            for pdf in zathura okular evince qpdfview; do
+                command -v "$pdf" >/dev/null && exec "$pdf" "$target"
+            done
+            ;;
+
+        application/vnd.openxmlformats-officedocument.*|application/msword|application/vnd.ms-*|application/vnd.oasis.opendocument.*)
+            for office in libreoffice wps abiword; do
+                command -v "$office" >/dev/null && exec "$office" "$target"
+            done
+            ;;
+
+        text/*|application/x-zerosize)
+            # Prioritize standard text processing contexts
+            if command -v code >/dev/null; then exec code "$target"; fi
+            if command -v subl >/dev/null; then exec subl "$target"; fi
+            if command -v kate >/dev/null; then exec kate "$target"; fi
+            ;;
+    esac
+fi
+
+# --- 3. Dynamic System Fallback ---
+if command -v xdg-mime >/dev/null && command -v gtk-launch >/dev/null; then
+    default_desktop=$(xdg-mime query default "$mime_type")
+    if [ -n "$default_desktop" ] && [[ "$default_desktop" != *"xdg-open"* ]]; then
+        exec gtk-launch "$default_desktop" "$target"
+    fi
+fi
+
+exec gio open "$target" 2>/dev/null || /usr/bin/xdg-open "$target"

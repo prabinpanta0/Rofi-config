@@ -22,4 +22,4 @@ A modular, minimalist layout for RAG-driven workflows, terminal multiplexing, an
 * Binds action sequences directly to your custom micro-utility runner (`xl-open`) via `ROFI_INFO` telemetry.
 ---
 
-*Tailored for `(idleshade  Quanta)`
+*<< Tailored for `(idleshade  Quanta)` >>*
